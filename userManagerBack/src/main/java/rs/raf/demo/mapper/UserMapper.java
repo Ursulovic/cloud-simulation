@@ -33,4 +33,20 @@ public class UserMapper {
         }
         return user;
     }
+
+    public UserDto userToUserDto(User user) {
+        UserDto userDto = new UserDto();
+        userDto.setEmail(userDto.getEmail());
+        userDto.setName(user.getName());
+        userDto.setSurname(user.getSurname( ));
+        userDto.setPassword(user.getPassword());
+
+        for (Permission p :
+                user.getPermissions()) {
+            userDto.getPermissions().add(p.getId());
+        }
+
+        return userDto;
+
+    }
 }

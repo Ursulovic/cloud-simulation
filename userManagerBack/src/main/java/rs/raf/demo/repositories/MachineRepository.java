@@ -7,5 +7,5 @@ import rs.raf.demo.model.Machine;
 @Repository
 public interface MachineRepository extends JpaRepository<Machine, Long> {
 
-    void removeMachineById(long id);
+    Machine findMachineById(long id);
 }

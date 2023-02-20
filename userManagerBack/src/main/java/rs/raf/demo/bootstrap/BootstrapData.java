@@ -15,14 +15,17 @@ public class BootstrapData implements CommandLineRunner {
 
     private final PermissionRepository permissionRepository;
 
+    private final MachineRepository machineRepository;
+
     private final PasswordEncoder passwordEncoder;
 
 
 
     @Autowired
-    public BootstrapData(UserRepository userRepository, PermissionRepository permissionRepository, PasswordEncoder passwordEncoder) {
+    public BootstrapData(UserRepository userRepository, PermissionRepository permissionRepository, MachineRepository machineRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.permissionRepository = permissionRepository;
+        this.machineRepository = machineRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -100,6 +103,7 @@ public class BootstrapData implements CommandLineRunner {
         user1.getPermissions().add(p10);
 
         this.userRepository.save(user1);
+
 
 
 

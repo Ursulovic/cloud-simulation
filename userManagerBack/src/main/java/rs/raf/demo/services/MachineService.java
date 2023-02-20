@@ -9,6 +9,8 @@ public interface MachineService {
 
     public void destroyMachine(long id);
 
+    public void startMachine(long id);
+
 
 
 

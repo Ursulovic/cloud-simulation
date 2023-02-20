@@ -71,7 +71,7 @@ public class UserServiceImpl implements UserDetailsService {
         boolean isThere = false;
 
         for (Permission p : user1.getPermissions()) {
-            if (p.getName().equals("can_create_users")) {
+            if (p.getName().equals("can_cre/ate_users")) {
                 isThere = true;
                 break;
             }
