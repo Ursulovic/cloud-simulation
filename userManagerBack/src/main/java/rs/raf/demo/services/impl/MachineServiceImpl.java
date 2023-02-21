@@ -1,14 +1,10 @@
 package rs.raf.demo.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.security.authentication.AccountExpiredException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException;
 import rs.raf.demo.exceptions.ForbiddenException;
 import rs.raf.demo.exceptions.MachineStatusException;
 import rs.raf.demo.model.Machine;
@@ -18,6 +14,7 @@ import rs.raf.demo.model.User;
 import rs.raf.demo.repositories.MachineRepository;
 import rs.raf.demo.dto.MachineDto;
 import rs.raf.demo.repositories.UserRepository;
+import rs.raf.demo.services.AsyncMethods;
 import rs.raf.demo.services.MachineService;
 
 import javax.persistence.EntityNotFoundException;
@@ -26,16 +23,20 @@ import java.util.Random;
 
 @Service
 @Transactional
+@EnableAsync
 public class MachineServiceImpl implements MachineService {
 
     private final MachineRepository machineRepository;
 
     private final UserRepository userRepository;
 
+    private final AsyncMethods asyncMethods;
+
     @Autowired
-    public MachineServiceImpl(MachineRepository machineRepository, UserRepository userRepository) {
+    public MachineServiceImpl(MachineRepository machineRepository, UserRepository userRepository, AsyncMethods asyncMethods) {
         this.machineRepository = machineRepository;
         this.userRepository = userRepository;
+        this.asyncMethods = asyncMethods;
     }
 
     @Override
@@ -98,7 +99,7 @@ public class MachineServiceImpl implements MachineService {
             throw new MachineStatusException("Machine already running");
         }
 
-        _startMachine(machine, new Random().nextInt(5000));
+        asyncMethods._startMachine(machine, new Random().nextInt(5000), this.machineRepository);
 
 
 
@@ -108,25 +109,6 @@ public class MachineServiceImpl implements MachineService {
 
     //async methods
 
-
-    @Async
-    public void _startMachine(Machine machine ,int time) {
-
-        long time1 = new Date().getTime();
-
-        try {
-            Thread.sleep(10_000 + time);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        machine.setStatus(MachineStatus.RUNNING.toString());
-        this.machineRepository.flush();
-
-        long time2 = new Date().getTime();
-
-        System.out.println("Execution time: " + (double)(time2 - time1) /1000);
-
-    }
 
 
     private boolean checkPermission(String email, String permission) {
