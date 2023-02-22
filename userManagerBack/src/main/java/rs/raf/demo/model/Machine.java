@@ -21,6 +21,17 @@ public class Machine {
     @Column(nullable = false)
     private boolean active;
 
+    @Column(nullable = false)
+    private boolean busy;
+
+    public boolean isBusy() {
+        return busy;
+    }
+
+    public void setBusy(boolean busy) {
+        this.busy = busy;
+    }
+
     public long getCreationDate() {
         return creationDate;
     }

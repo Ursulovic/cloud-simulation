@@ -9,6 +9,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 import rs.raf.demo.dto.MachineDto;
 import rs.raf.demo.exceptions.ForbiddenException;
+import rs.raf.demo.exceptions.MachineBusyException;
 import rs.raf.demo.exceptions.MachineStatusException;
 import rs.raf.demo.model.Machine;
 import rs.raf.demo.services.MachineService;
@@ -53,6 +54,10 @@ public class MachineController {
         catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+        catch (MachineBusyException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(503).build();
+        }
     }
 
     @PutMapping(value = "/start/{id}")
@@ -60,10 +65,63 @@ public class MachineController {
         try {
             this.machineService.startMachine(id);
             return ResponseEntity.ok().build();
-        }catch (Exception e) {
+        }catch (MachineBusyException e) {
             e.printStackTrace();
-            return ResponseEntity.status(505).build();
+            return ResponseEntity.status(503).build();
+        }catch (ForbiddenException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(403).build();
+        }catch (MachineStatusException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
+
+    @PutMapping(value = "/stop/{id}")
+    public ResponseEntity<?> stopMachine(@PathVariable("id") long id) {
+        try {
+            this.machineService.stopMachine(id);
+            return ResponseEntity.ok().build();
+        }catch (MachineBusyException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(503).build();
+        }catch (ForbiddenException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(403).build();
+        }catch (MachineStatusException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+    }
+
+    @PutMapping(value = "/restart/{id}")
+    public ResponseEntity<?> restartMachine(@PathVariable("id") long id) {
+        try {
+            this.machineService.restartMachine(id);
+            return ResponseEntity.ok().build();
+        }catch (MachineBusyException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(503).build();
+        }catch (ForbiddenException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(403).build();
+        }catch (MachineStatusException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }

@@ -1,11 +1,13 @@
 package rs.raf.demo.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import rs.raf.demo.exceptions.ForbiddenException;
+import rs.raf.demo.exceptions.MachineBusyException;
 import rs.raf.demo.exceptions.MachineStatusException;
 import rs.raf.demo.model.Machine;
 import rs.raf.demo.model.MachineStatus;
@@ -18,11 +20,11 @@ import rs.raf.demo.services.AsyncMethods;
 import rs.raf.demo.services.MachineService;
 
 import javax.persistence.EntityNotFoundException;
+import javax.persistence.LockModeType;
 import java.util.Date;
 import java.util.Random;
 
 @Service
-@Transactional
 @EnableAsync
 public class MachineServiceImpl implements MachineService {
 
@@ -52,6 +54,7 @@ public class MachineServiceImpl implements MachineService {
         machine.setStatus(MachineStatus.STOPPED.toString());
         machine.setActive(machineDto.isActive());
         machine.setCreationDate(new Date().getTime());
+        machine.setBusy(false);
 
         this.machineRepository.save(machine);
 
@@ -59,7 +62,8 @@ public class MachineServiceImpl implements MachineService {
     }
 
     @Override
-    public void destroyMachine(long id) throws ForbiddenException, EntityNotFoundException {
+    @Transactional
+    public void destroyMachine(long id) throws ForbiddenException, EntityNotFoundException, MachineStatusException, MachineBusyException {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         if (!checkPermission(email, "can_destroy_machines")) {
@@ -68,8 +72,6 @@ public class MachineServiceImpl implements MachineService {
         Machine machine = this.machineRepository.findMachineById(id);
 
 
-        System.out.println("AAAAAAA");
-        System.out.println(id);
 
         if (machine == null) {
             throw new EntityNotFoundException("No machine with provied id");
@@ -79,13 +81,17 @@ public class MachineServiceImpl implements MachineService {
             throw new MachineStatusException("Machine is not active");
         }
 
+        if (machine.isBusy())
+            throw new MachineBusyException();
+
         machine.setActive(false);
-        this.machineRepository.flush();
+        this.machineRepository.save(machine);
 
     }
 
     @Override
-    public void startMachine(long id) {
+    @Transactional
+    public void startMachine(long id) throws MachineStatusException, MachineBusyException, ForbiddenException, EntityNotFoundException {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         if (!checkPermission(email, "can_start_machines")) {
             throw new ForbiddenException("You do not have a permission for this action!");
@@ -93,13 +99,72 @@ public class MachineServiceImpl implements MachineService {
 
         Machine machine = this.machineRepository.findMachineById(id);
 
-
-
         if (!machine.getStatus().equals(MachineStatus.STOPPED.toString())) {
             throw new MachineStatusException("Machine already running");
         }
 
-        asyncMethods._startMachine(machine, new Random().nextInt(5000), this.machineRepository);
+        synchronized (this) {
+            if (!machine.isBusy()) {
+                machine.setBusy(true);
+                this.machineRepository.save(machine);
+                asyncMethods.setStatus(machine, new Random().nextInt(5000), MachineStatus.RUNNING);
+            } else {
+                throw new MachineBusyException();
+            }
+        }
+
+    }
+
+    @Override
+    @Transactional
+    public void stopMachine(long id) throws MachineStatusException, MachineBusyException, ForbiddenException, EntityNotFoundException {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!checkPermission(email, "can_stop_machines")) {
+            throw new ForbiddenException("You do not have a permission for this action!");
+        }
+
+        Machine machine = this.machineRepository.findMachineById(id);
+
+
+        if (!machine.getStatus().equals(MachineStatus.RUNNING.toString())) {
+            throw new MachineStatusException("Machine is already stopped");
+        }
+
+
+
+        synchronized (this) {
+            if (!machine.isBusy()) {
+                machine.setBusy(true);
+                this.machineRepository.save(machine);
+                asyncMethods.setStatus(machine, new Random().nextInt(5000), MachineStatus.STOPPED);
+            } else {
+                throw new MachineBusyException();
+            }
+        }
+    }
+
+    @Override
+    public void restartMachine(long id) throws MachineStatusException, MachineBusyException, ForbiddenException, EntityNotFoundException  {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!checkPermission(email, "can_restart_machines")) {
+            throw new ForbiddenException("You do not have a permission for this action!");
+        }
+
+        Machine machine = this.machineRepository.findMachineById(id);
+
+        if (!machine.getStatus().equals(MachineStatus.RUNNING.toString())) {
+            throw new MachineStatusException("Machine is not running");
+        }
+
+        synchronized (this) {
+            if (!machine.isBusy()) {
+                machine.setBusy(true);
+                this.machineRepository.save(machine);
+                asyncMethods.restart(machine, new Random().nextInt(5000));
+            } else {
+                throw new MachineBusyException();
+            }
+        }
 
 
 
