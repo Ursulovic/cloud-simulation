@@ -1,11 +1,11 @@
 package rs.raf.demo.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import rs.raf.demo.dto.SearchParamsDto;
 import rs.raf.demo.exceptions.ForbiddenException;
 import rs.raf.demo.exceptions.MachineBusyException;
 import rs.raf.demo.exceptions.MachineStatusException;
@@ -20,9 +20,7 @@ import rs.raf.demo.services.AsyncMethods;
 import rs.raf.demo.services.MachineService;
 
 import javax.persistence.EntityNotFoundException;
-import javax.persistence.LockModeType;
-import java.util.Date;
-import java.util.Random;
+import java.util.*;
 
 @Service
 @EnableAsync
@@ -55,6 +53,7 @@ public class MachineServiceImpl implements MachineService {
         machine.setActive(machineDto.isActive());
         machine.setCreationDate(new Date().getTime());
         machine.setBusy(false);
+        machine.setName(machineDto.getName());
 
         this.machineRepository.save(machine);
 
@@ -169,6 +168,28 @@ public class MachineServiceImpl implements MachineService {
 
 
 
+    }
+
+
+
+    @Override
+    public List<Machine> searchMachines(SearchParamsDto searchParamsDto) throws MachineStatusException, MachineBusyException, ForbiddenException, EntityNotFoundException {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!checkPermission(email, "can_search_machines")) {
+            throw new ForbiddenException("You do not have a permission for this action!");
+        }
+
+
+
+        List<Machine> machines = new ArrayList<>();
+
+        machines = this.machineRepository.searchMachines(searchParamsDto.getName(),
+                searchParamsDto.getStatus(),
+                searchParamsDto.getDateFrom(),
+                searchParamsDto.getDateTo());
+
+
+        return machines;
     }
 
 

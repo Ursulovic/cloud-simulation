@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 import rs.raf.demo.dto.MachineDto;
+import rs.raf.demo.dto.SearchParamsDto;
 import rs.raf.demo.exceptions.ForbiddenException;
 import rs.raf.demo.exceptions.MachineBusyException;
 import rs.raf.demo.exceptions.MachineStatusException;
@@ -111,7 +112,10 @@ public class MachineController {
         }
     }
 
-
+    @PostMapping(value = "/search")
+    public ResponseEntity<?> searchMachines(@RequestBody SearchParamsDto searchParamsDto) {
+        return ResponseEntity.ok().body(this.machineService.searchMachines(searchParamsDto));
+    }
 
 
 

@@ -1,9 +1,11 @@
 package rs.raf.demo.services;
 
+import rs.raf.demo.dto.SearchParamsDto;
 import rs.raf.demo.model.Machine;
 import rs.raf.demo.dto.MachineDto;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MachineService {
 
@@ -17,8 +19,7 @@ public interface MachineService {
 
     public void restartMachine(long id);
 
-
-
+    public List<Machine> searchMachines(SearchParamsDto searchParamsDto);
 
 
 

@@ -1,5 +1,6 @@
 package rs.raf.demo.services;
 
+import rs.raf.demo.model.Machine;
 import rs.raf.demo.model.User;
 
 import java.util.List;
@@ -13,4 +14,5 @@ public interface UserService {
     public List<User> findAll();
 
     public User editUser();
+
 }
