@@ -1,5 +1,6 @@
 package rs.raf.demo.services;
 
+import rs.raf.demo.dto.ScheduleOperationDto;
 import rs.raf.demo.dto.SearchParamsDto;
 import rs.raf.demo.model.Machine;
 import rs.raf.demo.dto.MachineDto;
@@ -20,6 +21,8 @@ public interface MachineService {
     public void restartMachine(long id);
 
     public List<Machine> searchMachines(SearchParamsDto searchParamsDto);
+
+    public void scheduleOperation(ScheduleOperationDto scheduleOperationDto);
 
 
 

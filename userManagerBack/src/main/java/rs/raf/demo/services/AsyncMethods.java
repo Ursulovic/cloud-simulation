@@ -1,17 +1,21 @@
 package rs.raf.demo.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import rs.raf.demo.exceptions.MachineBusyException;
+import rs.raf.demo.exceptions.MachineStatusException;
+import rs.raf.demo.model.ErrorMessage;
 import rs.raf.demo.model.Machine;
-import rs.raf.demo.model.MachineStatus;
+import rs.raf.demo.model.machine.MachineOperation;
+import rs.raf.demo.model.machine.MachineStatus;
+import rs.raf.demo.repositories.ErrorMessageRepository;
 import rs.raf.demo.repositories.MachineRepository;
 
-import javax.persistence.LockModeType;
 import java.util.Date;
+import java.util.Random;
 
 @Service
 @EnableAsync
@@ -19,16 +23,17 @@ public class AsyncMethods {
 
     private final MachineRepository machineRepository;
 
+    private final ErrorMessageRepository errorMessageRepository;
+
     @Autowired
-    public AsyncMethods(MachineRepository machineRepository) {
+    public AsyncMethods(MachineRepository machineRepository, ErrorMessageRepository errorMessageRepository) {
         this.machineRepository = machineRepository;
+        this.errorMessageRepository = errorMessageRepository;
     }
 
     @Async
     @Transactional
     public void setStatus(Machine machine , int time, MachineStatus machineStatus) {
-
-
 
         long time1 = new Date().getTime();
 
@@ -74,10 +79,64 @@ public class AsyncMethods {
         machineRepository.save(machine);
         System.out.println("Machine turned on");
 
+    }
 
+    @Async
+    @Transactional
+    public void scheduleOperation(Machine machine, long date, MachineOperation machineOperation) {
+
+        switch (machineOperation) {
+            case START:
+                if (!machine.getStatus().equals(MachineStatus.STOPPED.toString())) {
+                    logError(machine, new Date().getTime(), machineOperation, "Machine already running");
+                }
+                synchronized (this) {
+                    if (!machine.isBusy()) {
+                        machine.setBusy(true);
+                        this.machineRepository.save(machine);
+                        setStatus(machine, new Random().nextInt(5000), MachineStatus.RUNNING);
+                    } else
+                        logError(machine, new Date().getTime(), machineOperation, "Machine busy");
+                }
+                break;
+            case STOP:
+                if (!machine.getStatus().equals(MachineStatus.RUNNING.toString())) {
+                    logError(machine, new Date().getTime(), machineOperation, "Machine already stopped");
+                }
+                synchronized (this) {
+                    if (!machine.isBusy()) {
+                        machine.setBusy(true);
+                        this.machineRepository.save(machine);
+                        setStatus(machine, new Random().nextInt(5000), MachineStatus.STOPPED);
+                    } else
+                        logError(machine, new Date().getTime(), machineOperation, "Machine busy");
+                }
+                break;
+            case RESTART:
+                if (!machine.getStatus().equals(MachineStatus.RUNNING.toString())) {
+                    logError(machine, new Date().getTime(), machineOperation, "Machine is not running");
+                }
+                synchronized (this) {
+                    if (!machine.isBusy()) {
+                        machine.setBusy(true);
+                        this.machineRepository.save(machine);
+                        restart(machine, new Random().nextInt(5000));
+                    } else {
+                        throw new MachineBusyException();
+                    }
+                }
+
+
+        }
 
     }
 
-
-
+    public void logError(Machine machine, long date, MachineOperation machineOperation, String message) {
+        ErrorMessage errorMessage = new ErrorMessage();
+        errorMessage.setMachine(machine);
+        errorMessage.setDate(date);
+        errorMessage.setOperation(machineOperation.toString());
+        errorMessage.setMessage(message);
+        this.errorMessageRepository.save(errorMessage);
+    }
 }

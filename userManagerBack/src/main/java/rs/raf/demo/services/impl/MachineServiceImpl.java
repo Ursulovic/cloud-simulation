@@ -3,14 +3,17 @@ package rs.raf.demo.services.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.firewall.RequestRejectedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import rs.raf.demo.dto.ScheduleOperationDto;
 import rs.raf.demo.dto.SearchParamsDto;
 import rs.raf.demo.exceptions.ForbiddenException;
 import rs.raf.demo.exceptions.MachineBusyException;
 import rs.raf.demo.exceptions.MachineStatusException;
 import rs.raf.demo.model.Machine;
-import rs.raf.demo.model.MachineStatus;
+import rs.raf.demo.model.machine.MachineOperation;
+import rs.raf.demo.model.machine.MachineStatus;
 import rs.raf.demo.model.Permission;
 import rs.raf.demo.model.User;
 import rs.raf.demo.repositories.MachineRepository;
@@ -18,6 +21,7 @@ import rs.raf.demo.dto.MachineDto;
 import rs.raf.demo.repositories.UserRepository;
 import rs.raf.demo.services.AsyncMethods;
 import rs.raf.demo.services.MachineService;
+import rs.raf.demo.services.ScheduleOperation;
 
 import javax.persistence.EntityNotFoundException;
 import java.util.*;
@@ -32,11 +36,14 @@ public class MachineServiceImpl implements MachineService {
 
     private final AsyncMethods asyncMethods;
 
+    private final ScheduleOperation scheduleOperation;
+
     @Autowired
-    public MachineServiceImpl(MachineRepository machineRepository, UserRepository userRepository, AsyncMethods asyncMethods) {
+    public MachineServiceImpl(MachineRepository machineRepository, UserRepository userRepository, AsyncMethods asyncMethods, ScheduleOperation scheduleOperation) {
         this.machineRepository = machineRepository;
         this.userRepository = userRepository;
         this.asyncMethods = asyncMethods;
+        this.scheduleOperation = scheduleOperation;
     }
 
     @Override
@@ -96,11 +103,11 @@ public class MachineServiceImpl implements MachineService {
             throw new ForbiddenException("You do not have a permission for this action!");
         }
 
-        Machine machine = this.machineRepository.findMachineById(id);
+            Machine machine = this.machineRepository.findMachineById(id);
 
-        if (!machine.getStatus().equals(MachineStatus.STOPPED.toString())) {
-            throw new MachineStatusException("Machine already running");
-        }
+            if (!machine.getStatus().equals(MachineStatus.STOPPED.toString())) {
+                throw new MachineStatusException("Machine already running");
+            }
 
         synchronized (this) {
             if (!machine.isBusy()) {
@@ -192,8 +199,42 @@ public class MachineServiceImpl implements MachineService {
         return machines;
     }
 
+    @Override
+    public void scheduleOperation(ScheduleOperationDto scheduleOperationDto) throws RequestRejectedException, ForbiddenException {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        boolean b = false;
 
-    //async methods
+        System.out.println(scheduleOperationDto.toString());
+
+        switch (scheduleOperationDto.getOperation().toUpperCase()) {
+            case "START":
+                b = checkPermission(email, "can_start_machines");
+                break;
+            case "STOP":
+                b = checkPermission(email, "can_stop_machines");
+                break;
+            case "RESTART":
+                b = checkPermission(email, "can_restart_machines");
+                break;
+            default:
+                throw new RequestRejectedException("Operation not supported");
+        }
+
+        if (!b)
+            throw new ForbiddenException("Not permitted");
+
+        Machine machine = this.machineRepository.findMachineById(scheduleOperationDto.getId());
+
+
+
+
+        scheduleOperation.scheduleOperation(machine, scheduleOperationDto.getDate(), MachineOperation.valueOf(scheduleOperationDto.getOperation()));
+
+
+
+    }
+
+
 
 
 

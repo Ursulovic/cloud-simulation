@@ -6,8 +6,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.firewall.RequestRejectedException;
 import org.springframework.web.bind.annotation.*;
 import rs.raf.demo.dto.MachineDto;
+import rs.raf.demo.dto.ScheduleOperationDto;
 import rs.raf.demo.dto.SearchParamsDto;
 import rs.raf.demo.exceptions.ForbiddenException;
 import rs.raf.demo.exceptions.MachineBusyException;
@@ -115,6 +117,19 @@ public class MachineController {
     @PostMapping(value = "/search")
     public ResponseEntity<?> searchMachines(@RequestBody SearchParamsDto searchParamsDto) {
         return ResponseEntity.ok().body(this.machineService.searchMachines(searchParamsDto));
+    }
+
+    @PostMapping("/schedule")
+    public ResponseEntity<?> scheduleOperation(@RequestBody ScheduleOperationDto scheduleOperationDto) {
+        try {
+            this.machineService.scheduleOperation(scheduleOperationDto);
+        }catch (RequestRejectedException e){
+            return ResponseEntity.status(422).build();
+        }
+        catch (ForbiddenException e){
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok().build();
     }
 
 
