@@ -1,0 +1,22 @@
+<div>
+  <h3>Login page</h3>
+
+  <div>
+
+    <form (submit)="login()" class="mb-5">
+
+      <label>Username:</label><br>
+      <input type="email" class="form-control" id="email" name="email" placeholder="Eneter your email" [(ngModel)]="email"><br>
+
+      <label>Password:</label><br>
+      <input type="password" class="form-control" id="password" name="password" placeholder="Eneter your password" [(ngModel)]="password">
+      <br>
+      <button>
+        Login
+      </button>
+
+    </form>
+
+  </div>
+
+</div>

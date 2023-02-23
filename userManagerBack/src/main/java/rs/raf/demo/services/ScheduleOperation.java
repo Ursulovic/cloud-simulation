@@ -32,9 +32,9 @@ public class ScheduleOperation {
     @Transactional
     public void scheduleOperation(Machine machine, long date, MachineOperation machineOperation) {
 
-        long now = new Date().getTime() / 1000;
+        long now = new Date().getTime();
 
-        //test
+        date *= 1000;
 
         if (date <= now) {
             throw new RuntimeException("Bad entry");
@@ -56,9 +56,11 @@ public class ScheduleOperation {
             case START:
                 if (!machine.getStatus().equals(MachineStatus.STOPPED.toString())) {
                     asyncMethods.logError(machine, new Date().getTime(), machineOperation, "Machine already running");
+
                     break;
                 }
                 synchronized (this) {
+                    machine = this.machineRepository.findMachineById(machine.getId());
                     if (!machine.isBusy()) {
                         machine.setBusy(true);
                         this.machineRepository.save(machine);
@@ -73,6 +75,7 @@ public class ScheduleOperation {
                     break;
                 }
                 synchronized (this) {
+                    machine = this.machineRepository.findMachineById(machine.getId());
                     if (!machine.isBusy()) {
                         machine.setBusy(true);
                         this.machineRepository.save(machine);
@@ -87,6 +90,7 @@ public class ScheduleOperation {
                     break;
                 }
                 synchronized (this) {
+                    machine = this.machineRepository.findMachineById(machine.getId());
                     if (!machine.isBusy()) {
                         machine.setBusy(true);
                         this.machineRepository.save(machine);

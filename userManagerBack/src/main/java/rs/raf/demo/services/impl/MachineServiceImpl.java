@@ -1,5 +1,6 @@
 package rs.raf.demo.services.impl;
 
+import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -140,6 +141,7 @@ public class MachineServiceImpl implements MachineService {
 
         synchronized (this) {
             if (!machine.isBusy()) {
+                machine = this.machineRepository.findMachineById(id);
                 machine.setBusy(true);
                 this.machineRepository.save(machine);
                 asyncMethods.setStatus(machine, new Random().nextInt(5000), MachineStatus.STOPPED);
@@ -163,6 +165,7 @@ public class MachineServiceImpl implements MachineService {
         }
 
         synchronized (this) {
+            machine = this.machineRepository.findMachineById(id);
             if (!machine.isBusy()) {
                 machine.setBusy(true);
                 this.machineRepository.save(machine);
