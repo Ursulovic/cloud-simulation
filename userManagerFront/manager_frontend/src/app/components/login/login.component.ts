@@ -24,9 +24,10 @@ export class LoginComponent {
       if (res.status == 200) {
         console.log(res.body.jwt);
         this.loginService.setToken(res.body.jwt);
+        alert("Login successful!");
       }
       else {
-        alert("Wrong username or password!")
+        alert("Wrong username or password!");
       }
     })
   }

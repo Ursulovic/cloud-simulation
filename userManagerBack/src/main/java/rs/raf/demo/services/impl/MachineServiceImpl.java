@@ -1,6 +1,5 @@
 package rs.raf.demo.services.impl;
 
-import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +16,7 @@ import rs.raf.demo.model.machine.MachineOperation;
 import rs.raf.demo.model.machine.MachineStatus;
 import rs.raf.demo.model.Permission;
 import rs.raf.demo.model.User;
+import rs.raf.demo.repositories.ErrorMessageRepository;
 import rs.raf.demo.repositories.MachineRepository;
 import rs.raf.demo.dto.MachineDto;
 import rs.raf.demo.repositories.UserRepository;
@@ -39,6 +39,7 @@ public class MachineServiceImpl implements MachineService {
 
     private final ScheduleOperation scheduleOperation;
 
+
     @Autowired
     public MachineServiceImpl(MachineRepository machineRepository, UserRepository userRepository, AsyncMethods asyncMethods, ScheduleOperation scheduleOperation) {
         this.machineRepository = machineRepository;
@@ -51,9 +52,8 @@ public class MachineServiceImpl implements MachineService {
     public Machine createMachine(MachineDto machineDto) throws ForbiddenException {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        if (!checkPermission(email, "can_create_machines")) {
-            throw new ForbiddenException("You do not have a permission for this action!");
-        }
+        checkPermission(email, "can_search_machines");
+
 
         Machine machine = new Machine();
         machine.setCreator(this.userRepository.findByUsername(email));
@@ -73,10 +73,10 @@ public class MachineServiceImpl implements MachineService {
     public void destroyMachine(long id) throws ForbiddenException, EntityNotFoundException, MachineStatusException, MachineBusyException {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        if (!checkPermission(email, "can_destroy_machines")) {
-            throw new ForbiddenException("You do not have a permission for this action!");
-        }
+        checkPermission(email, "can_search_machines");
+
         Machine machine = this.machineRepository.findMachineById(id);
+
 
 
 
@@ -87,6 +87,11 @@ public class MachineServiceImpl implements MachineService {
         if (machine.getStatus().equals(MachineStatus.RUNNING.toString())) {
             throw new MachineStatusException("Machine is not active");
         }
+
+        checkCreator(email, machine);
+
+
+
 
         if (machine.isBusy())
             throw new MachineBusyException();
@@ -100,9 +105,8 @@ public class MachineServiceImpl implements MachineService {
     @Transactional
     public void startMachine(long id) throws MachineStatusException, MachineBusyException, ForbiddenException, EntityNotFoundException {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!checkPermission(email, "can_start_machines")) {
-            throw new ForbiddenException("You do not have a permission for this action!");
-        }
+        checkPermission(email, "can_search_machines");
+
 
             Machine machine = this.machineRepository.findMachineById(id);
 
@@ -110,7 +114,10 @@ public class MachineServiceImpl implements MachineService {
                 throw new MachineStatusException("Machine already running");
             }
 
-        synchronized (this) {
+            checkCreator(email, machine);
+
+
+
             if (!machine.isBusy()) {
                 machine.setBusy(true);
                 this.machineRepository.save(machine);
@@ -118,7 +125,6 @@ public class MachineServiceImpl implements MachineService {
             } else {
                 throw new MachineBusyException();
             }
-        }
 
     }
 
@@ -126,9 +132,8 @@ public class MachineServiceImpl implements MachineService {
     @Transactional
     public void stopMachine(long id) throws MachineStatusException, MachineBusyException, ForbiddenException, EntityNotFoundException {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!checkPermission(email, "can_stop_machines")) {
-            throw new ForbiddenException("You do not have a permission for this action!");
-        }
+        checkPermission(email, "can_search_machines");
+
 
         Machine machine = this.machineRepository.findMachineById(id);
 
@@ -137,9 +142,11 @@ public class MachineServiceImpl implements MachineService {
             throw new MachineStatusException("Machine is already stopped");
         }
 
+        checkCreator(email, machine);
 
 
-        synchronized (this) {
+
+
             if (!machine.isBusy()) {
                 machine = this.machineRepository.findMachineById(id);
                 machine.setBusy(true);
@@ -148,15 +155,13 @@ public class MachineServiceImpl implements MachineService {
             } else {
                 throw new MachineBusyException();
             }
-        }
     }
 
     @Override
     public void restartMachine(long id) throws MachineStatusException, MachineBusyException, ForbiddenException, EntityNotFoundException  {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!checkPermission(email, "can_restart_machines")) {
-            throw new ForbiddenException("You do not have a permission for this action!");
-        }
+        checkPermission(email, "can_search_machines");
+
 
         Machine machine = this.machineRepository.findMachineById(id);
 
@@ -164,7 +169,9 @@ public class MachineServiceImpl implements MachineService {
             throw new MachineStatusException("Machine is not running");
         }
 
-        synchronized (this) {
+        checkCreator(email, machine);
+
+
             machine = this.machineRepository.findMachineById(id);
             if (!machine.isBusy()) {
                 machine.setBusy(true);
@@ -173,7 +180,6 @@ public class MachineServiceImpl implements MachineService {
             } else {
                 throw new MachineBusyException();
             }
-        }
 
 
 
@@ -185,9 +191,7 @@ public class MachineServiceImpl implements MachineService {
     @Override
     public List<Machine> searchMachines(SearchParamsDto searchParamsDto) throws MachineStatusException, MachineBusyException, ForbiddenException, EntityNotFoundException {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!checkPermission(email, "can_search_machines")) {
-            throw new ForbiddenException("You do not have a permission for this action!");
-        }
+        checkPermission(email, "can_search_machines");
 
 
 
@@ -211,20 +215,18 @@ public class MachineServiceImpl implements MachineService {
 
         switch (scheduleOperationDto.getOperation().toUpperCase()) {
             case "START":
-                b = checkPermission(email, "can_start_machines");
+                checkPermission(email, "can_start_machines");
                 break;
             case "STOP":
-                b = checkPermission(email, "can_stop_machines");
+                checkPermission(email, "can_stop_machines");
                 break;
             case "RESTART":
-                b = checkPermission(email, "can_restart_machines");
+                checkPermission(email, "can_restart_machines");
                 break;
             default:
                 throw new RequestRejectedException("Operation not supported");
         }
 
-        if (!b)
-            throw new ForbiddenException("Not permitted");
 
         Machine machine = this.machineRepository.findMachineById(scheduleOperationDto.getId());
 
@@ -241,7 +243,7 @@ public class MachineServiceImpl implements MachineService {
 
 
 
-    private boolean checkPermission(String email, String permission) {
+    private void checkPermission(String email, String permission) {
         User user = this.userRepository.findByUsername(email);
         boolean isThere = false;
         for (Permission p : user.getPermissions()) {
@@ -250,7 +252,19 @@ public class MachineServiceImpl implements MachineService {
                 break;
             }
         }
-        return isThere;
+
+        if (!isThere)
+            throw new ForbiddenException("You do not posses a permission for this action");
+
     }
+
+    private void checkCreator(String email, Machine machine) {
+        User user = this.userRepository.findByUsername(email);
+
+        if (machine.getId() != user.getId()) {
+            throw new ForbiddenException("You do not posses right to this machine!");
+        }
+    }
+
 
 }

@@ -1,0 +1,20 @@
+<div>
+  <h3>Create new machine page</h3>
+
+  <form (submit)="newMachine()">
+
+    <label>Machine name:</label><br>
+    <input type="text" class="form-control" name="machineName" placeholder="Enter machine name" required [(ngModel)]="name"><br>
+    <label>Machine status</label><br>
+    <select name="isActive" [(ngModel)]="active" class="form-select" aria-label="Select machine state">
+      <option value="true">On</option>
+      <option value="false">Off</option>
+    </select><br>
+    <button>
+      Submit
+    </button>
+
+
+  </form>
+
+</div>

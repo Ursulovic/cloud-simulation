@@ -33,4 +33,7 @@ public class Machine {
     @Column(nullable = false)
     private String name;
 
+    @Version
+    private long version;
+
 }

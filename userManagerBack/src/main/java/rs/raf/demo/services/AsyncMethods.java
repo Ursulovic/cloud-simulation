@@ -90,33 +90,28 @@ public class AsyncMethods {
                 if (!machine.getStatus().equals(MachineStatus.STOPPED.toString())) {
                     logError(machine, new Date().getTime(), machineOperation, "Machine already running");
                 }
-                synchronized (this) {
                     if (!machine.isBusy()) {
                         machine.setBusy(true);
                         this.machineRepository.save(machine);
                         setStatus(machine, new Random().nextInt(5000), MachineStatus.RUNNING);
                     } else
                         logError(machine, new Date().getTime(), machineOperation, "Machine busy");
-                }
                 break;
             case STOP:
                 if (!machine.getStatus().equals(MachineStatus.RUNNING.toString())) {
                     logError(machine, new Date().getTime(), machineOperation, "Machine already stopped");
                 }
-                synchronized (this) {
                     if (!machine.isBusy()) {
                         machine.setBusy(true);
                         this.machineRepository.save(machine);
                         setStatus(machine, new Random().nextInt(5000), MachineStatus.STOPPED);
                     } else
                         logError(machine, new Date().getTime(), machineOperation, "Machine busy");
-                }
                 break;
             case RESTART:
                 if (!machine.getStatus().equals(MachineStatus.RUNNING.toString())) {
                     logError(machine, new Date().getTime(), machineOperation, "Machine is not running");
                 }
-                synchronized (this) {
                     if (!machine.isBusy()) {
                         machine.setBusy(true);
                         this.machineRepository.save(machine);
@@ -124,7 +119,6 @@ public class AsyncMethods {
                     } else {
                         throw new MachineBusyException();
                     }
-                }
 
 
         }

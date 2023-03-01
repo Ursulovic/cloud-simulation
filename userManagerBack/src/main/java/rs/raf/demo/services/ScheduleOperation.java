@@ -59,7 +59,6 @@ public class ScheduleOperation {
 
                     break;
                 }
-                synchronized (this) {
                     machine = this.machineRepository.findMachineById(machine.getId());
                     if (!machine.isBusy()) {
                         machine.setBusy(true);
@@ -67,14 +66,12 @@ public class ScheduleOperation {
                         asyncMethods.setStatus(machine, new Random().nextInt(5000), MachineStatus.RUNNING);
                     } else
                         asyncMethods.logError(machine, new Date().getTime(), machineOperation, "Machine busy");
-                }
                 break;
             case STOP:
                 if (!machine.getStatus().equals(MachineStatus.RUNNING.toString())) {
                     asyncMethods.logError(machine, new Date().getTime(), machineOperation, "Machine already stopped");
                     break;
                 }
-                synchronized (this) {
                     machine = this.machineRepository.findMachineById(machine.getId());
                     if (!machine.isBusy()) {
                         machine.setBusy(true);
@@ -82,14 +79,12 @@ public class ScheduleOperation {
                         asyncMethods.setStatus(machine, new Random().nextInt(5000), MachineStatus.STOPPED);
                     } else
                         asyncMethods.logError(machine, new Date().getTime(), machineOperation, "Machine busy");
-                }
                 break;
             case RESTART:
                 if (!machine.getStatus().equals(MachineStatus.RUNNING.toString())) {
                     asyncMethods.logError(machine, new Date().getTime(), machineOperation, "Machine is not running");
                     break;
                 }
-                synchronized (this) {
                     machine = this.machineRepository.findMachineById(machine.getId());
                     if (!machine.isBusy()) {
                         machine.setBusy(true);
@@ -98,7 +93,6 @@ public class ScheduleOperation {
                     } else {
                         throw new MachineBusyException();
                     }
-                }
                 break;
 
         }

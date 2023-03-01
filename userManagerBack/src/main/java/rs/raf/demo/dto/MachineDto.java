@@ -5,7 +5,6 @@ import lombok.Data;
 @Data
 public class MachineDto {
 
-    private long userId;
 
     private boolean active;
 

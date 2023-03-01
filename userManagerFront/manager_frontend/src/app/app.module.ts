@@ -8,6 +8,9 @@ import {FormsModule} from "@angular/forms";
 import { HomeComponent } from './components/home/home.component';
 import { UserListComponent } from './components/user-list/user-list.component';
 import { NewUserComponent } from './components/new-user/new-user.component';
+import { CreateMachineComponent } from './components/create-machine/create-machine.component';
+import { DestroyMachineComponent } from './components/destroy-machine/destroy-machine.component';
+import { ErrorMessageComponentComponent } from './components/error-message-component/error-message-component.component';
 
 @NgModule({
   declarations: [
@@ -15,7 +18,10 @@ import { NewUserComponent } from './components/new-user/new-user.component';
     LoginComponent,
     HomeComponent,
     UserListComponent,
-    NewUserComponent
+    NewUserComponent,
+    CreateMachineComponent,
+    DestroyMachineComponent,
+    ErrorMessageComponentComponent
   ],
   imports: [
     BrowserModule,
