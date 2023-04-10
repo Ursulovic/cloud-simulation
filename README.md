@@ -5,5 +5,5 @@ Application simulating cloud in which every user can create his machines and can
 # What I learned
 
 * Basics of Spring security
-* How to use Sprign async programming
+* How to use Spring async programming
 * How to implement optimistic database locking
